@@ -38,6 +38,7 @@ require 'dok'
 
 -- package
 gm = {}
+--prints ("BLABLA")
 
 -- C routines
 require 'libgm'
@@ -51,11 +52,12 @@ require 'gm.examples'
 require 'gm.adjacency'
 
 ----------------------------------------------------------------------
--- creates a graph
+-- creates an undirected graph
 --
-function gm.graph(...)
+function gm.undirectedGraph(...)
    -- usage
-   local args, adj, nStates, nodePot, edgePot, typ, maxIter, verbose = dok.unpack(
+   
+   local args, adj, nStates, nodePot, edgePot,cl, typ, maxIter, verbose = dok.unpack(
       {...},
       'gm.graph',
       'create a graphical model from an adjacency matrix',
@@ -63,11 +65,12 @@ function gm.graph(...)
       {arg='nStates', type='number | torch.Tensor | table', help='number of states per node (N, or a single number)', default=1},
       {arg='nodePot', type='torch.Tensor', help='unary/node potentials (N x nStates)'},
       {arg='edgePot', type='torch.Tensor', help='joint/edge potentials (N x nStates x nStates)'},
+      {arg='class', type='string', help='class of graph: directed | undirected | factor', default='undirected'},
       {arg='type', type='string', help='type of graph: crf | mrf | generic', default='generic'},
       {arg='maxIter', type='number', help='maximum nb of iterations for loopy graphs', default=1},
       {arg='verbose', type='boolean', help='verbose mode', default=false}
    )
-
+   print("adjacency = ",adj)
    -- shortcuts
    local zeros = torch.zeros
    local ones = torch.ones
@@ -82,7 +85,9 @@ function gm.graph(...)
    local nNodes,nEdges,edgeEnds
    if type(adj) == 'table' then
       nNodes = #adj
+      
       nEdges = 0
+      print(ipairs(adj))
       for node1,nodes2 in ipairs(adj) do
          for node2 in pairs(nodes2) do
             nEdges = nEdges + 1
@@ -116,6 +121,7 @@ function gm.graph(...)
       end
    end
 
+   print("edgeEnds = ",edgeEnds)
    -- count incident edges for each variable
    local nNei = zeros(nNodes)
    --local nei
@@ -136,6 +142,8 @@ function gm.graph(...)
       nei[n2][nNei[n2]] = e
    end
 
+   print("nNei = ",nNei)
+   print("nei = ",nei)
    -- compute (V,E) with V[i] the sum of the nb of edges connected to 
    -- nodes (1,2,...,i-1) plus 1
    -- and E[i] the indexes of nodes connected to node i
@@ -159,6 +167,8 @@ function gm.graph(...)
    end
    V[nNodes+1] = edge
 
+   print("V",V)
+   print("E",E)
    -- create graph structure
    graph.edgeEnds = edgeEnds
    graph.V = V
