@@ -5,7 +5,7 @@
 #ifdef _OPENMP
 #include "omp.h"
 #endif
-
+#include <iostream>
 static int gm_infer_(bpInitMessages)(lua_State *L) {
   // get args
   THTensor *ee = THTensor_(newContiguous)((THTensor *)luaT_checkudata(L, 1, torch_Tensor));
@@ -14,21 +14,25 @@ static int gm_infer_(bpInitMessages)(lua_State *L) {
 
   // dims
   long nEdges = ee->size[0];
-
   // raw pointers
   real *edgeEnds = THTensor_(data)(ee);
   real *nStates = THTensor_(data)(ns);
   real *message = THTensor_(data)(msg);
 
   // propagate state normalizations
-#pragma omp parallel for
+//#pragma omp parallel for
   for (long e = 0; e < nEdges; e++) {
     // get edge of interest, and its nodes
     long n1 = edgeEnds[e*2+0]-1;
     long n2 = edgeEnds[e*2+1]-1;
+    std::cout <<"edgeEnds[e*2+0] = "<<edgeEnds[e*2+0]<<std::endl;
+    std::cout <<"edgeEnds[e*2+1] = "<<edgeEnds[e*2+1]<<std::endl;
 
     // propagate
     for (long s = 0; s < nStates[n2]; s++) {
+      std::cout <<"nStates[n2] = "<<nStates[n2]<<std::endl;
+      std::cout <<"msg->stride[0] = "<<msg->stride[0]<<std::endl;
+      std::cout <<"msg->stride[1] = "<<msg->stride[1]<<std::endl;
       message[e*msg->stride[0]+s*msg->stride[1]] = 1/nStates[n2]; //  n1 ==> n2
     }
     for (long s = 0; s < nStates[n1]; s++) {

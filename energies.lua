@@ -229,6 +229,7 @@ function gm.energies.mrf.makePotentials(graph,w,nodeMap,edgeMap)
       print('<gm.energies.mrf.makePotentials> making potentials from parameters')
    end
 
+   print ("w = ", w)
    -- generate node potentials
    local nodePot = graph.nodePot or Tensor()
    nodePot:resize(nNodes,maxStates)

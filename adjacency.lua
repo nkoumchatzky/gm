@@ -53,6 +53,22 @@ function gm.adjacency.full(nNodes)
 end
 
 ----------------------------------------------------------------------
+-- Builds a satellite adjacency matrix : fully connected suns nodes with satellites nodes connected to all the sun nodes 
+-- Meant for a directed graph since the suns points towards the satellites and not the reverse
+--
+function gm.adjacency.solar(nSuns, nSatellites)
+   local nNodes = nSatellites + nSuns
+   local adj = ones(nNodes,nNodes) - eye(nNodes)
+  
+   -- Satellites connections
+   for i = nSuns+1,nNodes do
+      for j = nSuns+1,nNodes do
+         adj[i][j] = 0
+      end
+   end
+   return adj         
+end
+----------------------------------------------------------------------
 -- N-connexity 2D lattice (N = 4 or 8)
 --
 function gm.adjacency.lattice2d(nRows,nCols,connex)
@@ -103,6 +119,47 @@ function gm.adjacency.lattice2d(nRows,nCols,connex)
    return adj
 end
 
+function gm.adjacency.listOfEdges(adj)
+   -- construct list of edges, from adjacency matrix
+   local nNodes,nEdges,edgeEnds
+   if type(adj) == 'table' then
+      nNodes = #adj      
+      nEdges = 0
+      print(ipairs(adj))
+      for node1,nodes2 in ipairs(adj) do
+         for node2 in pairs(nodes2) do
+            nEdges = nEdges + 1
+         end
+      end
+      nEdges = nEdges / 2
+      edgeEnds = zeros(nEdges,2)
+      local k = 1
+      for node1,nodes2 in ipairs(adj) do
+         for node2 in pairs(nodes2) do
+            if node1 < node2 then
+               edgeEnds[k][1] = node1
+               edgeEnds[k][2] = node2
+               k = k + 1
+            end
+         end
+      end
+   else
+      nNodes = adj:size(1)
+      nEdges = adj:sum()/2
+      edgeEnds = zeros(nEdges,2)
+      local k = 1
+      for i = 1,nNodes do
+         for j = 1,nNodes do
+            if i < j and adj[i][j] == 1 then
+               edgeEnds[k][1] = i
+               edgeEnds[k][2] = j
+               k = k + 1
+            end
+         end
+      end
+   end
+   return nNodes,nEdges,edgeEnds
+end
 ----------------------------------------------------------------------
 -- N-connexity 3D lattice (N = 6 or 26)
 --

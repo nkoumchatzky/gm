@@ -146,7 +146,8 @@ function gm.infer.bp(graph,maxIter)
    local E = graph.E
    local nodePot = graph.nodePot
    local edgePot = graph.edgePot
-
+   print('nodePot = ', nodePot)
+   print('edgePot = ', edgePot)
    -- init
    local product = ones(nNodes,maxStates)
    local nodeBel = ones(nNodes,maxStates)

@@ -51,6 +51,60 @@ require 'gm.sample'
 require 'gm.examples'
 require 'gm.adjacency'
 
+
+----------------------------------------------------------------------
+-- creates an undirected graph
+--
+function gm.directedGraph(...)
+   -- usage
+   
+   local args, adj, nStates, nodePot, edgePot,cl, typ, maxIter, verbose = dok.unpack(
+      {...},
+      'gm.graph',
+      'create a graphical model from an adjacency matrix',
+      {arg='adjacency', type='torch.Tensor | table', help='binary adjacency matrix (N x N tensor, or N-entry sparse table)', req=true},
+      {arg='nStates', type='number | torch.Tensor | table', help='number of states per node (N, or a single number)', default=1},
+      {arg='nodePot', type='torch.Tensor', help='unary/node potentials (N x nStates)'},
+      {arg='edgePot', type='torch.Tensor', help='joint/edge potentials (N x nStates x nStates)'},
+      {arg='type', type='string', help='type of graph: generic', default='generic'},
+      {arg='maxIter', type='number', help='maximum nb of iterations for loopy graphs', default=1},
+      {arg='verbose', type='boolean', help='verbose mode', default=false}
+   )
+   print("adjacency = ",adj)
+   -- shortcuts
+   local zeros = torch.zeros
+   local ones = torch.ones
+   local eye = torch.eye
+   local Tensor = torch.Tensor
+   local sort = torch.sort
+
+   -- graph structure
+   local graph = {}
+
+   -- construct list of edges, from adjacency matrix
+   local nNodes,nEdges,edgeEnds = gm.adjacency.listOfEdges(adj)
+
+   print("edgeEnds = ",edgeEnds)
+   -- count incident edges for each variable
+   local nNei = zeros(nNodes)
+   --local nei
+   if type(adj) == 'table' then
+      nei = {}
+      for n = 1,nNodes do
+         nei[n] = {}
+      end
+   else
+      nei = zeros(nNodes,nNodes)
+   end
+   for e = 1,nEdges do
+      local n1 = edgeEnds[e][1]
+      local n2 = edgeEnds[e][2]
+      nNei[n1] = nNei[n1] + 1
+      nNei[n2] = nNei[n2] + 1
+      nei[n1][nNei[n1]] = e
+      nei[n2][nNei[n2]] = e
+   end
+end
 ----------------------------------------------------------------------
 -- creates an undirected graph
 --
@@ -65,7 +119,6 @@ function gm.undirectedGraph(...)
       {arg='nStates', type='number | torch.Tensor | table', help='number of states per node (N, or a single number)', default=1},
       {arg='nodePot', type='torch.Tensor', help='unary/node potentials (N x nStates)'},
       {arg='edgePot', type='torch.Tensor', help='joint/edge potentials (N x nStates x nStates)'},
-      {arg='class', type='string', help='class of graph: directed | undirected | factor', default='undirected'},
       {arg='type', type='string', help='type of graph: crf | mrf | generic', default='generic'},
       {arg='maxIter', type='number', help='maximum nb of iterations for loopy graphs', default=1},
       {arg='verbose', type='boolean', help='verbose mode', default=false}
@@ -82,44 +135,7 @@ function gm.undirectedGraph(...)
    local graph = {}
 
    -- construct list of edges, from adjacency matrix
-   local nNodes,nEdges,edgeEnds
-   if type(adj) == 'table' then
-      nNodes = #adj
-      
-      nEdges = 0
-      print(ipairs(adj))
-      for node1,nodes2 in ipairs(adj) do
-         for node2 in pairs(nodes2) do
-            nEdges = nEdges + 1
-         end
-      end
-      nEdges = nEdges / 2
-      edgeEnds = zeros(nEdges,2)
-      local k = 1
-      for node1,nodes2 in ipairs(adj) do
-         for node2 in pairs(nodes2) do
-            if node1 < node2 then
-               edgeEnds[k][1] = node1
-               edgeEnds[k][2] = node2
-               k = k + 1
-            end
-         end
-      end
-   else
-      nNodes = adj:size(1)
-      nEdges = adj:sum()/2
-      edgeEnds = zeros(nEdges,2)
-      local k = 1
-      for i = 1,nNodes do
-         for j = 1,nNodes do
-            if i < j and adj[i][j] == 1 then
-               edgeEnds[k][1] = i
-               edgeEnds[k][2] = j
-               k = k + 1
-            end
-         end
-      end
-   end
+   local nNodes,nEdges,edgeEnds = gm.adjacency.listOfEdges(adj)
 
    print("edgeEnds = ",edgeEnds)
    -- count incident edges for each variable

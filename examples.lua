@@ -58,12 +58,12 @@ function gm.examples.simple()
    nNodes = 10
    nStates = 2
    adjacency = gm.adjacency.full(nNodes)
-   g = gm.graph{adjacency=adjacency, nStates=nStates, maxIter=10, verbose=true}
+   g = gm.undirectedGraph{adjacency=adjacency, nStates=nStates, maxIter=10, verbose=true}
 
    -- unary potentials
    nodePot = tensor{{1,3}, {9,1}, {1,3}, {9,1}, {1,1},
                     {1,3}, {9,1}, {1,3}, {9,1}, {1,1}}
-
+   print ('nodePot = ', nodePot)
    -- joint potentials
    edgePot = tensor(g.nEdges,nStates,nStates)
    basic = tensor{{2,1}, {1,2}}
@@ -104,6 +104,18 @@ function gm.examples.simple()
 end
 
 ----------------------------------------------------------------------
+-- Example of how to train an SolarSystem with suns and satellites
+--
+function gm.examples.trainSolar()
+   nSuns = 10
+   nSatellites = 10
+   nStates = 2
+   adjacency = gm.adjacency.solarSystem(nSuns, nSatellites)
+   -- TODO : set type to 'solar' 
+   g = gm.undirectedGraph{adjacency=adjacency, nStates=nStates, maxIter=10, type='generic', verbose=true}
+   return g   
+end
+----------------------------------------------------------------------
 -- Example of how to train an MRF
 --
 function gm.examples.trainMRF()
@@ -115,7 +127,8 @@ function gm.examples.trainMRF()
       adjacency[i][i+1] = 1
       adjacency[i+1][i] = 1
    end
-   g = gm.graph{adjacency=adjacency, nStates=nStates, maxIter=10, type='mrf', verbose=true}
+   print ("adjacency", adjacency)
+   g = gm.undirectedGraph{adjacency=adjacency, nStates=nStates, maxIter=10, type='mrf', verbose=true}
 
    -- define training set:
    nInstances = 100
@@ -163,7 +176,9 @@ function gm.examples.trainMRF()
 
    -- gen final potentials
    g:makePotentials()
-
+   
+   print("MRF nodePot = ", g.nodePot)
+   print("MRF edgePot = ", g.edgePot)
    -- exact decoding:
    local exact = g:decode('exact')
    print()
@@ -224,10 +239,10 @@ function gm.examples.trainCRF()
    })
 
    -- define adjacency matrix (4-connexity lattice)
-   local adj = gm.adjacency.lattice2d(nRows,nCols,4)
+   local adj = gm.adjacency.lattice2d(nRows,nCols,8)
 
    -- create graph
-   g = gm.graph{adjacency=adj, nStates=nStates, verbose=true, type='crf', maxIter=10}
+   g = gm.undirectedGraph{adjacency=adj, nStates=nStates, verbose=true, type='crf', maxIter=10}
 
    -- create node features (normalized X and a bias)
    Xnode = tensor(nInstances,2,nNodes)
@@ -236,9 +251,11 @@ function gm.examples.trainCRF()
    nFeatures = X:size(2)
    for f = 1,nFeatures do
       local Xf = X[{ {},f }]
+      print("Xf = ", Xf)
       local mu = Xf:mean()
       local sigma = Xf:std()
       Xf:add(-mu):div(sigma)
+      print("Xf 2 = ", Xf)
    end
    Xnode[{ {},2 }] = X -- features (simple normalized grayscale)
    nNodeFeatures = Xnode:size(2)
