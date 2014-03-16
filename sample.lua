@@ -182,7 +182,7 @@ function gm.sample.exact(g, N)
    local Z = computeZ(g)
 
    -- Samples
-   local samples = zeros(N,nNodes)
+   local samples = zeros(N,g.nNodes)
    for i = 1,N do
       samples[i] = sampleY(g,Z)
    end
